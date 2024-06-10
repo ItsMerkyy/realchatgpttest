@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            width: 90%;
+            max-width: 600px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .chat-box {
+            height: 400px;
+            overflow-y: scroll;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .chat-input {
+            display: flex;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+        }
+        .chat-input button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            border-radius: 0 4px 4px 0;
+        }
+        .message {
+            margin: 5px 0;
+        }
+        .message.user {
+            text-align: right;
+        }
+        .message.user .text {
+            background-color: #007BFF;
+            color: white;
+        }
+        .message.ai .text {
+            background-color: #f1f1f1;
+        }
+        .text {
+            display: inline-block;
+            padding: 10px;
+            border-radius: 4px;
+            max-width: 70%;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-box" id="chat-box">
+            <!-- Chat messages will be appended here -->
+        </div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const text = userInput.value;
+            if (text.trim() === '') return;
+            appendMessage(text, 'user');
+            userInput.value = '';
+
+            try {
+                const aiResponse = await getAIResponse(text);
+                appendMessage(aiResponse, 'ai');
+            } catch (error) {
+                console.error('Error getting AI response:', error);
+                appendMessage('Sorry, something went wrong. Please try again later.', 'ai');
+            }
+        }
+
+        function appendMessage(text, sender) {
+            const chatBox = document.getElementById('chat-box');
+            const message = document.createElement('div');
+            message.classList.add('message', sender);
+            const messageText = document.createElement('div');
+            messageText.classList.add('text');
+            messageText.textContent = text;
+            message.appendChild(messageText);
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function getAIResponse(userInput) {
+            const apiKey = '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';  // Replace this with your actual OpenAI API key
+            const apiUrl = 'https://api.openai.com/v1/chat/completions';
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo',  // Use 'gpt-3.5-turbo' instead of 'gpt-4'
+                        messages: [{ role: 'user', content: userInput }]
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorDetails = await response.text();
+                    throw new Error(`API error: ${response.statusText} - ${errorDetails}`);
+                }
+
+                const data = await response.json();
+                console.log('API response:', data);
+                return data.choices[0].message.content.trim();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+    </script>
+</body>
+</html>
